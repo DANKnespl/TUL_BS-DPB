@@ -1,0 +1,156 @@
+//u1 - 11 hits
+GET /products/_search
+{
+  "query": {
+    "term": {
+      "name": {
+        "value": "coffee"
+      }
+    }
+  }
+}
+
+//u2 - 12 hits (Toffee)
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "coffee",
+        "fuzziness":"1"
+      }
+    }
+  }
+}
+//u3 - 12 hits (Lid Coffeecup 12oz D9542b, match bere po slovech - coffeecup != coffee) 
+GET /products/_search
+{
+  "query": {
+    "match": {
+      "tags": "Coffee"
+    }
+  }
+}
+//u4 - 1 hit (Coffee Cup 8oz 5338cd)
+GET /products/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "tags": "Coffee"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "range": {
+            "in_stock": {
+              "lte": 10
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+//u5 - 6 hits
+GET /products/_search
+{
+  "_source": {
+    "includes": "name"
+  }, 
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "name": "coffee"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "match": {
+            "name": "cup"
+          }
+        }
+      ]
+    }
+  }
+}
+
+//u6 - 1000 hits
+GET /products/_search
+{
+  "_source": ["name","created"], 
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "created": {
+              "gte": "2000/01/01"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+//u7  - 1 hit (Vinegar - Red Wine)
+GET /products/_search
+{
+  "_source": "name", 
+  "query": {
+    "match_phrase": {
+      "name": {"query": "Red Wine"}
+    }
+  }
+}
+
+//u8
+GET /products/_search
+{
+  "_source": "name", 
+  "query":
+  {
+    "regexp":
+    {
+      "name": 
+      {
+        "value": ".*c.*",
+        "rewrite":"top_terms_blended_freqs_100"
+      }
+    }
+  },
+  "size": 5
+}
+
+//u9 
+GET /recipes/_search
+{
+  "_source": ["title","description","ingredients"], 
+  "query": {
+    "multi_match": {
+      "query": "spaghetti",
+      "fields": ["title","description","ingredients.name"]
+    }
+  }
+}
+
+//u10 - 0 hits vs 1 hit
+GET /recipes/_search
+{
+  "_source": ["title"], 
+  "query": {
+    "match_phrase": {
+      "title": {
+        "query": "Pasta Carbonara",
+        "slop": 2
+      }
+    }
+  }
+}

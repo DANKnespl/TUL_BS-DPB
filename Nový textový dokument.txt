@@ -1,0 +1,316 @@
+//mapovani
+//u1
+PUT /orders-new
+{
+  "mappings": {
+    "properties": {
+      "zakaznik":{
+        "properties": {
+          "jmeno":{"type":"text"}}
+      },
+      "lines": {
+        "properties": {
+          "amount": {
+            "type": "float"
+          },
+          "product_id": {
+            "type": "text"
+          },
+          "quantity": {
+            "type": "long"
+          }
+        }
+      },
+      "purchase_date":{"type": "date","format": "iso8601"}, 
+      "total_amount":{"type": "float"},
+      "status":{"type": "keyword"}
+    }
+  }
+}
+DELETE /orders-new
+POST /orders-new/_doc/1
+{
+  "zakaznik":{
+    "jmeno": "Daniel Knespl"
+  },
+  "lines": [
+    {
+      "amount": 10,
+      "product_id": "uH-cx4cBhZbCbnUo5XDf",
+      "quantity": 1
+    },
+    {
+      "amount": 10,
+      "product_id": "tn-cx4cBhZbCbnUo5XDf",
+      "quantity": 1
+    },
+    {
+      "amount": 10,
+      "product_id": "tH-cx4cBhZbCbnUo5XDf",
+      "quantity": 1
+    }
+  ],
+  "purchase_date":"2023-05-13T15:03:40Z", 
+  "total_amount": 30,
+  "status":"pending"
+}
+
+GET /orders-new/_doc/1
+
+//analýza
+POST _analyze
+{
+  "analyzer" : "standard",
+  "text" : "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}
+POST _analyze
+{
+  "analyzer" : "pattern",
+  "text" : "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}
+POST _analyze
+{
+  "analyzer" : "whitespace",
+  "text" : "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}
+
+
+
+//agregace
+//u1
+GET products/_search
+{
+  "size": 0, 
+  "aggs": {
+    "min_price": {
+      "min": {
+        "field": "price"
+      }
+    },
+    "max_price":{
+      "max": {
+        "field": "price"
+      }
+    },
+    "avg_price":{
+      "avg": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+//u2
+GET products/_search
+{
+  "size": 1, 
+  "aggs": {
+    "sold_stats": {
+      "stats": {
+        "field": "sold"
+      }
+    },
+    "max_sold":{
+      "top_hits": {
+      "sort": [ {
+        "sold":{
+          "order": "desc"
+        }
+      } ],
+      "size": 1
+    }
+    }
+    
+  }
+}
+//u3
+GET products/_search
+{
+  "size": 0,
+  "aggs": {
+    "tag_num": {
+      "terms": {
+        "field": "tags",
+        "order": {
+          "_key": "asc"
+        }
+      }
+    }
+  }
+}
+
+//u4
+GET products/_search
+{
+  "size": 0,
+  "aggs": {
+    "tag_num": {
+      "terms": {
+        "field": "tags",
+        "order": {
+          "_key": "asc"
+        }
+      },
+      "aggs": {
+        "tag_stats": {
+          "stats": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+//uB1
+GET products/_search
+{
+  "size": 0,
+  "aggs": {
+    "tag_num": {
+      "terms": {
+        "include": ["Coffee","Cake"], 
+        "field": "tags",
+        "order": {
+          "_key": "asc"
+        }
+      },
+      "aggs": {
+        "tag_stats": {
+          "stats": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+GET products/_search
+{
+  "size": 0,
+  "aggs": {
+    "tag_num": {
+      "filter": {
+        "terms": {
+          "tags": [
+            "Coffee",
+            "Cake"
+          ]
+        }
+      }, 
+      "aggs": {
+        "tag_stats": {
+          "stats": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+//uB2
+GET orders/_search
+{
+  "size": 0,
+  "aggs": {
+    "tag_num": {
+      "terms": {
+        "field": "status",
+        "order": {
+          "_key": "asc"
+        }
+      },
+      "aggs": {
+        "price_stats": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+
+//uB3
+GET orders/_search
+{
+  "size": 0, 
+  "aggs": {
+    "sales_over_time": {
+      "date_range": {
+        "field": "purchased_at",
+        "missing": "0001-01-01",
+        "ranges": [
+          {
+            "key": "Q1", 
+            "from": "2016-01-01",
+            "to": "2016-01-01||+3M"
+          },
+          {
+            "key": "Q2",
+            "from": "2016-01-01||+3M",
+            "to": "2016-01-01||+6M"
+          },{
+            "key": "Q3",
+            "from": "2016-01-01||+6M",
+            "to": "2016-01-01||+9M"
+          },{
+            "key": "Q4",
+            "from": "2016-01-01||+9M",
+            "to": "2016-01-01||+12M"
+          },
+          {
+            "key": "N/A",
+            "to":"0002-01-01"
+          }
+        ],
+        "format": "yyyy-MM-dd"
+      },
+      "aggs": {
+        "price_stats": {
+          "stats": {
+            "field": "total_amount"
+          }
+        }
+      }
+    }
+  }
+}
+
+POST orders/_doc
+{
+  "lines": [
+    {
+      "product_id": 6,
+      "amount": 71.32,
+      "quantity": 1
+    },
+    {
+      "product_id": 3,
+      "amount": 58.96,
+      "quantity": 3
+    },
+    {
+      "product_id": 1,
+      "amount": 29.8,
+      "quantity": 3
+    }
+  ],
+  "total_amount": 160.08,
+  "salesman": {
+    "id": 11,
+    "name": "Matthus Mitkcov"
+  },
+  "sales_channel": "store",
+  "status": "processed"
+}
+GET products
+
+get products/_search
+{
+}
+
+get products/_doc/sX-cx4cBhZbCbnUo5XDf
+
+

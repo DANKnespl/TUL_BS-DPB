@@ -1,0 +1,46 @@
+set IT 5
+set ID 4
+set LK 7
+set PB "1:13:02"
+set WR "0:00:01"
+
+exists ID
+
+get WR
+set ID 15
+INCR ID
+del IT	exists IT -> 0
+
+EXPIRE LK 60
+TTL LK -> 53
+
+RPUSH todolist tsk1
+RPUSH todolist tsk2
+RPUSH todolist tsk3
+RPUSH todolist tsk4
+RPUSH todolist tsk5
+RPUSH todolist tsk6
+LPUSH todolist tsk7
+RPUSH todolist tsk8 tsk9 tsk10
+LRANGE todolist 0 10
+RPOP todolist -> "tsk10"
+
+
+ZADD arcade 888 "Alfréd"
+...
+ZADD arcade 752 "Arno" 138 "Mario" 500 "Grawick" 900 "Peach" 999 "Hatty"
+ZREVRANGEBYSCORE arcade 999 0 WITHSCORES LIMIT 0 3
+127.0.0.1:6379> ZRANGEBYSCORE arcade 0 999 WITHSCORES LIMIT 0 1
+1) "Tinarix"
+2) "12"
+ZCOUNT arcade 0 100
+ZrevRangebyscore arcade 999 850
+127.0.0.1:6379> ZRANK arcade "Alfréd"
+(integer) 9
+127.0.0.1:6379> ZINCRBY arcade 12 "Alfréd"
+"900"
+127.0.0.1:6379> ZRANK arcade "Alfréd"
+(integer) 9
+
+
+
